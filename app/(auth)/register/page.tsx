@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -64,8 +65,22 @@ export default function RegisterPage() {
 				return;
 			}
 
-			setSuccess("Account created. Redirecting to sign in...");
-			router.push("/login");
+			setSuccess("Account created. Signing you in...");
+
+			const signInResult = await signIn("credentials", {
+				email,
+				password,
+				redirect: false,
+			});
+
+			if (signInResult?.error) {
+				setSuccess("Account created. Redirecting to sign in...");
+				router.push("/login");
+				return;
+			}
+
+			router.push("/");
+			router.refresh();
 		} catch {
 			setError("Unable to register. Please try again.");
 		} finally {

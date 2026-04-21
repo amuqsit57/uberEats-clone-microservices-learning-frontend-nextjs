@@ -1,6 +1,9 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 
+const AUTH_BASE_URL = process.env.AUTH_BASE_URL ?? "http://localhost:5000";
+const SEVEN_DAYS_IN_SECONDS = 7 * 24 * 60 * 60;
+
 
 const handler = NextAuth({
     providers:[
@@ -14,7 +17,11 @@ const handler = NextAuth({
 
                 },
             async authorize(credentials) {
-                    const res = await fetch('http://localhost:3000/api/auth/login', {
+                    if (!credentials?.email || !credentials?.password) {
+                        return null;
+                    }
+
+                    const res = await fetch(`${AUTH_BASE_URL}/api/auth/login`, {
                         method:'POST',
                         headers:{'Content-Type':
                             'application/json'
@@ -25,29 +32,63 @@ const handler = NextAuth({
                         })
 
                     })
-                    const user = await res.json()
+                    const payload = await res.json()
 
-                    if(!res.ok || !user){
-                        throw new Error(user.message)
+                    if(!res.ok || !payload){
+                        throw new Error(payload?.message ?? "Invalid credentials")
                     }
-                    return user
+
+                    const user = payload?.user ?? payload?.data?.user ?? payload
+                    const accessToken = payload?.token ?? payload?.accessToken ?? payload?.data?.token
+
+                    if (!user) {
+                        throw new Error("Invalid login response")
+                    }
+
+                    return {
+                        ...user,
+                        accessToken,
+                    }
             },
 
             }
         )
     ],
     session:{
-        strategy:"jwt"
+        strategy:"jwt",
+        maxAge: SEVEN_DAYS_IN_SECONDS
+    },
+    jwt: {
+        maxAge: SEVEN_DAYS_IN_SECONDS,
     },
     callbacks:{
         async jwt({token,user}){
-         if(user) token.user = user
-         return token
+         const mutableToken = token as typeof token & { user?: unknown; accessToken?: string }
+
+         if(user) {
+            mutableToken.user = user
+            const userToken = (user as { accessToken?: string }).accessToken
+            if (userToken) {
+                mutableToken.accessToken = userToken
+            }
+         }
+
+         return mutableToken
         },
 
         async session({session,token}){
-            if(token) session.user = token.user as any
-            return session
+            const mutableSession = session as typeof session & { accessToken?: string }
+            const mutableToken = token as typeof token & { user?: unknown; accessToken?: string }
+
+            if(mutableToken.user) {
+                mutableSession.user = mutableToken.user as any
+            }
+
+            if (mutableToken.accessToken) {
+                mutableSession.accessToken = mutableToken.accessToken
+            }
+
+            return mutableSession
         }
     },
 
