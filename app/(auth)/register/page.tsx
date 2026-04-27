@@ -16,6 +16,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+const API_GATEWAY_URL = process.env.NEXT_PUBLIC_API_GATEWAY_URL ?? "http://localhost:5002";
+
 export default function RegisterPage() {
 	const router = useRouter();
 
@@ -46,7 +48,7 @@ export default function RegisterPage() {
 		setIsLoading(true);
 
 		try {
-			const response = await fetch("http://localhost:5000/api/auth/register", {
+			const response = await fetch(`${API_GATEWAY_URL}/api/auth/register`, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",

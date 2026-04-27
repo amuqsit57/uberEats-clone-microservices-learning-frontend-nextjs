@@ -9,7 +9,7 @@ import { LogoutButton } from "@/components/auth/logout-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { OrdersApiError, Order, getMyOrders } from "@/lib/orders";
+import { OrdersApiError, Order, getMyOrders, updateOrderStatus } from "@/lib/orders";
 
 import ServerComponent from "./server_component";
 function formatCurrency(value: number) {
@@ -41,18 +41,22 @@ export function OrdersPageClient() {
   }, [accessToken, status]);
 
 
-  function handleApproveOrderId(orderId: number) {
-    const res = fetch(`http://localhost:5001/api/orders/${orderId}`,{
-      method: "PUT",
-      body: JSON.stringify({
-        status: "CONFIRMED",
-        userId: session?.user?.id,
-      }),
-      headers: {
-        "Content-Type": "application/json",
-        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-      },
-    })
+  async function handleApproveOrderId(orderId: number) {
+    if (!accessToken) {
+      setError("You need to sign in to update an order.");
+      return;
+    }
+
+    try {
+      await updateOrderStatus(orderId, "CONFIRMED", accessToken);
+      setRefreshIndex((current) => current + 1);
+    } catch (requestError) {
+      const message =
+        requestError instanceof OrdersApiError
+          ? requestError.message
+          : "Unable to update order status.";
+      setError(message);
+    }
   }
   
     

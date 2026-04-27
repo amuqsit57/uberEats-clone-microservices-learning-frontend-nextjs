@@ -1,7 +1,8 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 
-const AUTH_BASE_URL = process.env.AUTH_BASE_URL ?? "http://localhost:5000";
+const AUTH_BASE_URL =
+    process.env.AUTH_BASE_URL ?? process.env.API_GATEWAY_URL ?? "http://localhost:5002";
 const SEVEN_DAYS_IN_SECONDS = 7 * 24 * 60 * 60;
 
 

@@ -45,7 +45,8 @@ export type CreateOrderPayload = {
   totalPrice: number;
 };
 
-const ORDERS_BASE_URL = process.env.NEXT_PUBLIC_ORDERS_BASE_URL ?? "http://localhost:5001";
+const API_GATEWAY_URL = process.env.NEXT_PUBLIC_API_GATEWAY_URL ?? "http://localhost:5002";
+const ORDERS_BASE_URL = process.env.NEXT_PUBLIC_ORDERS_BASE_URL ?? API_GATEWAY_URL;
 
 export class OrdersApiError extends Error {
   status: number;
